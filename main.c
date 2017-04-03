@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h> // execvp, fork
+#include <sys/types.h> // pid_t
+#include <sys/wait.h> // wait
 
 
 char buffer[50];
@@ -85,20 +88,52 @@ int main(int argc, char const *argv[])
 	char *cmd = NULL;
 	int size = 50;
 	int sortie = 0;
+	pid_t p = 0;
+	int ret = 0;
 
-	int nb_arg = 20;
-	char* arg[20];
+	const int argcMax = 128;
+	char* argvCmd[argcMax];
 
 	
-	while (!sortie)
+	while (1)
 	{
-		printf("assh$ ");
-		cmd = fgets(buffer, size, stdin);
-		printf("Ligne lue : %s", cmd);
+		
+		printf("assh$ "); // prompt
+		
+		cmd = fgets(buffer, size, stdin); // lecture de la commande
+		
+		//printf("Ligne lue : %s", cmd); // confirmation
 
-		splitArg(cmd, nb_arg, arg);
+		splitArg(cmd, argcMax, argvCmd); // découpe de la commande
 
-		printArg(arg);
+		if (strcmp(argvCmd[0], "exit") == 0) // commande de sortie
+		{
+			break;
+		}
+
+
+		p = fork(); // fork, le fils exécute, le père attend
+
+		if (p==0) // processus fils qui exécute la commande
+		{
+			return execvp(argvCmd[0], argvCmd);
+		}
+
+		else // processus père attend le fils
+		{
+			wait(&ret); // le code de retour du père va dans ret
+			if (ret != 0) // si il y a eu une erreur lors de l'exécution
+			{
+				printf("La commande ne peut pas etre exécutée.\n");
+				//exit(EXIT_FAILURE);
+			}
+		}
+
+
+
+
+
+		//printArg(argvCmd); 
 
 		// int i;
 		// for (i = 0; i < size && cmd[i] != 0; i++)
@@ -113,10 +148,6 @@ int main(int argc, char const *argv[])
 		// 	}
 		// }
 
-		if (strcmp(cmd, "exit\n") == 0)
-		{
-			sortie = 1;
-		}
 	}
 	
 
