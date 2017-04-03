@@ -44,8 +44,8 @@ void splitArg(char* line, int argcMax, char* argv[])
 	// alors caractère courant est fin d'un mot, on le remplace par 0
 
 	char cour, prec; // caractère courant et caractère précédent
-	cour = 0;
-	prec = ' ';
+	cour = ' ';
+	prec = 0;
 
 	int i = 0;
 	int argc = 0; // nombre d'arguments
