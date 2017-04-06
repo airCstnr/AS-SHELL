@@ -5,6 +5,7 @@
 #include <unistd.h> // execvp, fork
 #include <sys/types.h> // pid_t
 #include <sys/wait.h> // wait
+#include <errno.h> // errno
 
 
 char buffer[50];
@@ -116,14 +117,21 @@ int main(int argc, char const *argv[])
 
 		if (p==0) // processus fils qui exécute la commande
 		{
-			return execvp(argvCmd[0], argvCmd);
+			ret = execvp(argvCmd[0], argvCmd);
+			printf("E fils : code = %i \n", ret);
+			printf("E fils : errno = %i \n", errno);
+			//printf("%s\n", sys_errlist[errno]);
+			perror("aash");
+			return 2;
 		}
 
 		else // processus père attend le fils
 		{
-			wait(&ret); // le code de retour du père va dans ret
+			wait(&ret); // le code de retour du fils va dans ret
 			if (ret != 0) // si il y a eu une erreur lors de l'exécution
 			{
+				printf("E père : code = %i \n", ret);
+				printf("E père : errno = %i \n", errno);
 				printf("La commande ne peut pas etre exécutée.\n");
 				//exit(EXIT_FAILURE);
 			}
