@@ -81,6 +81,49 @@ void splitArg(char* line, int argcMax, char* argv[])
 }
 
 
+int findAmp(char* argv[])
+{
+	// retourne 1 si le dernier argument de argv se termine avec & et le retire de la chaine s'il est trouvé
+	// retourne 0 sinon
+
+	char* prec = 0;
+	char* cour = 0;
+	char c = 0, p = 0;
+	int i = 0;
+
+	// on parcourt argv jusquà tomber sur 0 (fin de chaine)
+	while (argv[i] != 0)
+	{
+		prec = cour;
+		cour = argv[i];
+		i++;
+	}
+	
+	i = 0;
+	// on parcourt le dernier argument
+	while (cour[i] != 0)
+	{
+		p = c;
+		c = cour[i];
+		i++;
+	}
+
+
+	if (c == '&') // si le caractère courant est &
+	{
+		cour[i] = 0; // on fait terminer la chaine au caractère & et il est retiré
+		return 1;
+	}
+
+	return 0;
+}
+
+
+
+
+
+
+
 
 
 
@@ -112,17 +155,18 @@ int main(int argc, char const *argv[])
 			break;
 		}
 
+		printf("Le dernier argument est & : %s\n", findAmp(argvCmd)?"oui":"non"); 
 
 		p = fork(); // fork, le fils exécute, le père attend
 
 		if (p==0) // processus fils qui exécute la commande
 		{
 			ret = execvp(argvCmd[0], argvCmd);
-			printf("E fils : code = %i \n", ret);
-			printf("E fils : errno = %i \n", errno);
+			//printf("E fils : code = %i \n", ret);
+			//printf("E fils : errno = %i \n", errno);
 			//printf("%s\n", sys_errlist[errno]);
 			perror("aash");
-			return 2;
+			return ret;
 		}
 
 		else // processus père attend le fils
@@ -130,9 +174,9 @@ int main(int argc, char const *argv[])
 			wait(&ret); // le code de retour du fils va dans ret
 			if (ret != 0) // si il y a eu une erreur lors de l'exécution
 			{
-				printf("E père : code = %i \n", ret);
-				printf("E père : errno = %i \n", errno);
-				printf("La commande ne peut pas etre exécutée.\n");
+				//printf("E père : code = %i \n", ret);
+				//printf("E père : errno = %i \n", errno);
+				//printf("La commande ne peut pas etre exécutée.\n");
 				//exit(EXIT_FAILURE);
 			}
 		}
