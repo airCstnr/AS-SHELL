@@ -10,7 +10,6 @@
 	A faire:
 	- processus en arrière plan et interruptions
 	- interruptions CTRL-D
-
 */
 
 
@@ -19,9 +18,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h> // execvp, fork
-#include <sys/types.h> // pid_t
 #include <sys/wait.h> // wait
 #include <errno.h> // errno
+#include <signal.h> // sigaction
+#include <sys/types.h> // pid_t
 
 
 char buffer[50];
@@ -131,34 +131,61 @@ int findAmp(char* argv[])
 }
 
 
+void procedure()
+{
+	// procedure à lancer par sigaction lors d'une interruption par SIGCHLD
+
+	// lance la fonction wait et affiche pour l'utilisateur le PID du fils qui s'est terminé
+
+	pid_t ret;
+	int status;
+	ret = wait(&status);
+
+	printf("SIGCHLD : Fils %i terminé avec le statut %i\n", ret, status);
+
+}
 
 
+int readLine(char* line, int lineSize)
+{
+	// teste le cas d'erreur en sortie de cette fonction et la fin de fichier
+	
+	printf("assh$ "); // prompt
+		
+	cmd = fgets(buffer, size, stdin); // lecture de la commande
+		
+	printf("Ligne lue : %s", cmd); // confirmation de lecture
 
-
-
-
+	return 0;
+}
 
 
 int main(int argc, char const *argv[])
 {
 	char *cmd = NULL;
 	int size = 50;
-	//int sortie = 0;
 	pid_t p = 0;
 	int ret = 0;
 
-	const int argcMax = 128;
-	char* argvCmd[argcMax];
+
+	const struct sigaction action; // gestion de SIGCHLD
+	action.sa_handler = procedure;
 
 	
-	while (1)
+
+
+	const int argcMax = 128; // nombre maximal de paramètres d'une commande
+	char* argvCmd[argcMax]; // paramètres d'une commande
+
+	
+	while (1) // boucle infinie
 	{
 		
 		printf("assh$ "); // prompt
 		
 		cmd = fgets(buffer, size, stdin); // lecture de la commande
 		
-		//printf("Ligne lue : %s", cmd); // confirmation
+		//printf("Ligne lue : %s", cmd); // confirmation de lecture
 
 		splitArg(cmd, argcMax, argvCmd); // découpe de la commande
 
@@ -167,29 +194,38 @@ int main(int argc, char const *argv[])
 			break;
 		}
 
-		printf("Le dernier argument est & : %s\n", findAmp(argvCmd)?"oui":"non"); 
+		//printf("Le dernier argument est & : %s\n", findAmp(argvCmd)?"oui":"non");
+		
+
+
 
 		p = fork(); // fork, le fils exécute, le père attend
 
 		if (p==0) // processus fils qui exécute la commande
 		{
 			ret = execvp(argvCmd[0], argvCmd);
-			//printf("E fils : code = %i \n", ret);
-			//printf("E fils : errno = %i \n", errno);
-			//printf("%s\n", sys_errlist[errno]);
 			perror("aash");
 			return ret;
 		}
 
 		else // processus père attend le fils
 		{
-			wait(&ret); // le code de retour du fils va dans ret
-			if (ret != 0) // si il y a eu une erreur lors de l'exécution
+
+			if (findAmp(argvCmd)) // si le dernier argument est &, le processus doit etre exécuté en arrière plan
 			{
-				//printf("E père : code = %i \n", ret);
-				//printf("E père : errno = %i \n", errno);
-				//printf("La commande ne peut pas etre exécutée.\n");
-				//exit(EXIT_FAILURE);
+				int i = sigaction(SIGCHLD, &action, NULL);
+				printf("EXECUTION DU FILS EN COURS\n");
+			}
+			else // sinon il est exécuté normalement
+			{
+					wait(&ret); // le code de retour du fils va dans ret
+					if (ret != 0) // si il y a eu une erreur lors de l'exécution
+					{
+						//printf("E père : code = %i \n", ret);
+						//printf("E père : errno = %i \n", errno);
+						//printf("La commande ne peut pas etre exécutée.\n");
+						//exit(EXIT_FAILURE);
+					}
 			}
 		}
 
@@ -218,6 +254,7 @@ int main(int argc, char const *argv[])
 	//printArg(argv);
 
 	printf("Au revoir! \n");
+
 	return 0;
 }
 
