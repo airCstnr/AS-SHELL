@@ -1,4 +1,20 @@
 
+/*
+	AS-SHELL
+	TP création d'un shell pour l'Année Spéciale
+	Raphael Castanier
+	IUT2 Grenoble 2017
+*/
+
+/*
+	A faire:
+	- processus en arrière plan et interruptions
+	- interruptions CTRL-D
+
+*/
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -86,15 +102,13 @@ int findAmp(char* argv[])
 	// retourne 1 si le dernier argument de argv se termine avec & et le retire de la chaine s'il est trouvé
 	// retourne 0 sinon
 
-	char* prec = 0;
-	char* cour = 0;
-	char c = 0, p = 0;
+	char* cour = 0; // argument courant
+	char c = 0; // caractère courant
 	int i = 0;
 
 	// on parcourt argv jusquà tomber sur 0 (fin de chaine)
 	while (argv[i] != 0)
 	{
-		prec = cour;
 		cour = argv[i];
 		i++;
 	}
@@ -103,15 +117,13 @@ int findAmp(char* argv[])
 	// on parcourt le dernier argument
 	while (cour[i] != 0)
 	{
-		p = c;
 		c = cour[i];
 		i++;
 	}
 
-
 	if (c == '&') // si le caractère courant est &
 	{
-		cour[i] = 0; // on fait terminer la chaine au caractère & et il est retiré
+		cour[i] = 0; // on fait terminer la chaine au caractère & (il est remplacé par 0)
 		return 1;
 	}
 
@@ -131,7 +143,7 @@ int main(int argc, char const *argv[])
 {
 	char *cmd = NULL;
 	int size = 50;
-	int sortie = 0;
+	//int sortie = 0;
 	pid_t p = 0;
 	int ret = 0;
 
